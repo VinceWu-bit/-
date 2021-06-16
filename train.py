@@ -8,20 +8,21 @@ from env import ChessBoardEnv
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 def run_episode(env, agents, render=False):
 
-    obs = []
-    actions = []
-    obs += [env.reset()] # 重置环境, 重新开一局（即开始新的一个episode）
+    obs, actions = [], []
+    key = 0
+    obs += [env.reset()]
 
     for i in range(2):
-        actions += [agents[i].sample(obs[i])] # 根据算法选择一个动作
-        [key, flag] = env.step(actions[i], player=i+1)  # 与环境进行一个交互
+        actions += [agents[i].sample(obs[i])]
+        [key, flag] = env.step(actions[i], player=i+1)
         obs += [flag]
 
     obs[2] += 16 * key
-    actions += [agents[2].sample(obs[2])] # 根据算法选择一个动作
-    [key, flag] = env.step(actions[2], player=3)  # 与环境进行一个交互
+    actions += [agents[2].sample(obs[2])]
+    [key, flag] = env.step(actions[2], player=3)
     obs += [flag]
 
     obs[3] += 16 * key
@@ -36,69 +37,49 @@ def run_episode(env, agents, render=False):
     plot_list += [reward]
 
 
-def test_episode(env, agent):
-    obs = []
-    actions = []
-    obs += [env.reset()]  # 重置环境, 重新开一局（即开始新的一个episode）
+if __name__ == '__main__':
 
-    for i in range(3):
-        actions += [agents[i].sample(obs[i])]  # 根据算法选择一个动作
-        [key, flag] = env.step(actions[i], player=i + 1)  # 与环境进行一个交互
-        obs += [flag]
-    obs[3] += 16 * key
-    actions += [agents[3].sample(obs[3])]
-    reward, done = env.step(actions[3], player=4)
+    env = ChessBoardEnv()
+    agents = [Agent(1, 64, 1), Agent(16, 4, 2), Agent(64, 6, 3), Agent(64, 6, 4)]
+    plot_list = []
+    reward_list = []
 
-    global plot_list
-    plot_list += [reward]
+    for i in range(4):
+        agents[i].restore()
 
+    for episode in range(200000):
+        run_episode(env, agents, False)
+        if episode % 1000 == 999:
+            reward_list += [sum(plot_list) / 1000]
+            print('episode:', episode, 'reward:', reward_list[-1])
+            plot_list = []
 
-env = ChessBoardEnv()
-agents = [Agent(1, 64, 1), Agent(16, 4, 2), Agent(64, 6, 3), Agent(64, 6, 4)]
-plot_list = []
-reward_list = []
-# 全部训练结束，查看算法效果
-for i in range(4):
-    agents[i].restore()
+    for i in range(4):
+        agents[i].save()
 
-for episode in range(200000):
-    run_episode(env, agents, False)
-    if episode % 1000 == 999:
-        reward_list += [sum(plot_list) / 1000]
-        print('episode:', episode, 'reward:', reward_list[-1])
-        plot_list = []
+    df = pd.DataFrame(reward_list)
+    writer = pd.ExcelWriter('data.xlsx', mode='a+')
+    df.to_excel(writer, 'sheet1')
+    writer.save()
 
-for i in range(4):
-    agents[i].save()
+    plt.rcParams.update({
+        "lines.color": "black",
+        "patch.edgecolor": "white",
+        "text.color": "black",
+        "axes.facecolor": "black",
+        "axes.edgecolor": "lightgray",
+        "axes.labelcolor": "white",
+        "xtick.color": "white",
+        "ytick.color": "white",
+        "grid.color": "lightgray",
+        "figure.facecolor": "black",
+        "figure.edgecolor": "black",
+        "savefig.facecolor": "black",
+        "savefig.edgecolor": "black"})
 
-df = pd.DataFrame(reward_list)
-writer = pd.ExcelWriter('data.xlsx', mode='a+')
-df.to_excel(writer, 'sheet1')
-writer.save()
-
-
-
-
-plt.rcParams.update({
-
-    "lines.color": "black",
-    "patch.edgecolor": "white",
-    "text.color": "black",
-    "axes.facecolor": "black",
-    "axes.edgecolor": "lightgray",
-    "axes.labelcolor": "white",
-    "xtick.color": "white",
-    "ytick.color": "white",
-    "grid.color": "lightgray",
-    "figure.facecolor": "black",
-    "figure.edgecolor": "black",
-    "savefig.facecolor": "black",
-    "savefig.edgecolor": "black"})
-
-
-plt.plot(reward_list,color='white')
-plt.title('chessboard_game')
-plt.xlabel('episode/1000')
-plt.ylabel('reward')
-plt.show()
+    plt.plot(reward_list, color='white')
+    plt.title('chessboard_game')
+    plt.xlabel('episode/1000')
+    plt.ylabel('reward')
+    plt.show()
 
