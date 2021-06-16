@@ -22,9 +22,7 @@ class ChessBoardEnv:
         return self.state_to_obs()
 
     def step(self, action, player):
-        # reward = 0
-        # done = False
-        # print(self.chessboard)
+
         if player == 1:  # 监狱长1
             assert 0 <= action <= 63
             self.key = action // 16
@@ -54,8 +52,6 @@ class ChessBoardEnv:
                 return 1 if self.state_to_key() == self.key else -1, True
             else:
                 return self.key, self.state_to_obs()
-
-
 
     def state_to_key(self):
         key = 0
